@@ -92,7 +92,7 @@ def dijkstra(game, initial, movefunc, weighted=False):
     return visited, path
 
 
-def __movefunc_helper(game, loc, movefunc_helper):
+def __movefunc_helper(game, loc, movefunc_helper, randomize=False):
     res = []
     x, y = loc
     for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
@@ -104,7 +104,7 @@ def __movefunc_helper(game, loc, movefunc_helper):
     return res
 
 
-def agent_movefunc(game, loc):
+def agent_movefunc(game, loc, randomize=False):
     ''' Can move to non-block spaces '''
     def helper(game, loc, dloc):
         x, y = loc
@@ -112,7 +112,7 @@ def agent_movefunc(game, loc):
         nx, ny = x + dx, y + dy
         return game._tile_get_block((nx, ny), mi.Block) is None
 
-    return __movefunc_helper(game, loc, helper)
+    return __movefunc_helper(game, loc, helper, randomize=randomize)
 
 
 def pushblock_movefunc(game, loc):
