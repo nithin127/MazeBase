@@ -122,8 +122,8 @@ class GridFeaturizer(BaseGridFeaturizer):
 
     def _featurize_grid(self, game, id):
         max_w, max_h = game.get_max_bounds()
-        features = [[[] for y in range(max_w)]
-                     for x in range(max_h)]
+        features = [[[] for y in range(max_h)]
+                     for x in range(max_w)]
         for (x, y) in itertools.product(range(game.width), range(game.height)):
             itemlst = game._map[x][y]
             for item in itemlst:
