@@ -55,7 +55,7 @@ def empty_locations(game, bad_blocks=None, mask=lambda x, y: True):
     return empties
 
 
-def dijkstra(game, initial, movefunc, weighted=False):
+def dijkstra(game, initial, movefunc, weighted=False, bias=False):
     '''
     Accepts:
         game
@@ -88,9 +88,16 @@ def dijkstra(game, initial, movefunc, weighted=False):
             if edge not in visited or weight < visited[edge]:
                 visited[edge] = weight
                 path[edge] = min_node
+            elif bias and weight == visited[weight]:
+                path[edge] = solve_conflict(path[edge], min_node)
 
     return visited, path
 
+def solve_conflict(n1, n2):
+    if n1[1] > n2[1] or n1[0] > n2[0]:
+        return n1
+    else:
+        return n2
 
 def __movefunc_helper(game, loc, movefunc_helper, randomize=False):
     res = []
