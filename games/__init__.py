@@ -21,4 +21,5 @@ from .blocks_switches_games import (
     LightKey,
     BlockedDoor,
     SwitchOn,
+    SwitchOnSingle,
 )

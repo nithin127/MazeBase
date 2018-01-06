@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
+
+import random
 from random import randint
 
 from mazebase.games import (
@@ -223,7 +225,7 @@ class Switches(PBSType):
                 r - best * self.turn_penalty
 
 
-class SwitchOn(PBSType):
+class SwitchOn(Switches):
     ''' Agent must toogle all switches to the same color '''
 
     __properties = dict(
@@ -231,12 +233,8 @@ class SwitchOn(PBSType):
         switch_states=2,
     )
 
-    def __init__(self, **kwargs):
-        populate_kwargs(self, self.__class__.__properties, kwargs)
-        super(SwitchOn, self).__init__(**kwargs)
-
     def _reset(self):
-        super(SwitchOn, self)._reset()
+        super(Switches, self)._reset()
 
         loc = choice(creationutils.empty_locations(self, bad_blocks=[mi.Block]))
         self.agent = SwitchesAgent(location=loc)
@@ -260,35 +258,46 @@ class SwitchOn(PBSType):
     def _finished(self):
         return set(x.state for x in self._switches) == set([1])
 
-    def _side_information(self):
-        return super(SwitchOn, self)._side_information() + \
-            [[self.FEATURE.SWITCH,
-              self.FEATURE.STATE,
-              self.FEATURE.SAME,
-              ]]
 
-    def _calculate_approximate_reward(self):
-        '''Greedy solution that visits each switch in turn'''
-        best = 1e100
-        sw_colors = [sw.state for sw in self._switches]
-        print(sw_colors)
-        for i, sw in enumerate(self._switches):
-            tmp = [(sw.state - c) % self.switch_states for c in sw_colors]
-            # Heuristic for perferring not needing to flip switches
-            best = min(best, sum(x if x > 0 else -2 for x in tmp))
+class SwitchOnSingle(SwitchOn):
+    ''' Agent must toogle all switches to the same color '''
 
-        to_visit = [sw.location for sw in self._switches]
-        loc = self.agent.location
-        r = 0
-        for i, sw in enumerate(self._switches):
-            visited, path = creationutils.dijkstra(
-                self, loc, creationutils.agent_movefunc, True)
-            ind, loc = min(enumerate(to_visit), key=lambda x: visited[x[1]])
-            r -= visited[loc]  # Reward is negative of path
-            to_visit.remove(loc)
-        return super(SwitchOn,
-                     self)._calculate_approximate_reward() + \
-                r - best * self.turn_penalty
+    __properties = dict(
+        n_switches=1,
+        switch_states=2,
+    )
+
+    def __init__(self, **kwargs):
+        populate_kwargs(self, self.__class__.__properties, kwargs)
+        super(Switches, self).__init__(**kwargs)
+        random.seed(1234)
+        
+    def _reset(self):
+        super(Switches, self)._reset()
+
+        random.seed(1234)
+        
+        loc = choice(creationutils.empty_locations(self, bad_blocks=[mi.Block]))
+        self.agent = SwitchesAgent(location=loc)
+        self._add_agent(self.agent, "SwitchesAgent")
+
+        visited, _ = creationutils.dijkstra(self, loc,
+                                            creationutils.agent_movefunc)
+
+        self._switches = []
+        for _ in range(self.n_switches):
+            loc = choice(creationutils.empty_locations(self))
+            self._switches.append(mi.Switch(
+                location=loc,
+                nstates=self.switch_states,
+                start_state=0, #choice(range(self.switch_states)),
+            ))
+            self._add_item(self._switches[-1])
+            if loc not in visited:
+                raise MazeException("No path to goal")
+
+    def _finished(self):
+        return set(x.state for x in self._switches) == set([1])
 
 
 def add_vertical_wall(game):
